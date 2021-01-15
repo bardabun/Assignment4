@@ -2,89 +2,71 @@ import DTO
 import sqlite3
 
 
-class _Logistics:
-    def __init__(self, conn):
-        self.conn = conn
+class Logistics:
+    def __init__(self, dbcon):
+        self._dbcon = dbcon
 
     def insert(self, logistic):  # insert Logistic DTO
-        self._conn.execute("""
+        self._dbcon.execute("""
             INSERT INTO logistics (id, name, count_sent, count_received) VALUES (?, ?, ?, ?)
         """, [logistic.id, logistic.name, logistic.count_sent, logistic.count_received])
 
-    def find(self, logistic_id):  # retrieve Logistic DTO
-        c = self._conn.cursor()
+    def find(self, logistic):  # retrieve Logistic DTO
+        c = self._dbcon.cursor()
         c.execute("""
             SELECT id, name FROM logistics WHERE id = ?
-        """, [logistic_id])
-        return DTO.logistic(*c.fetchone())
+        """, [logistic])
+        return DTO.Logistic(*c.fetchone())
 
 
-class _Clinics:
-    def __init__(self, conn):
-        self._conn = conn
+class Clinics:
+    def __init__(self, dbcon):
+        self._dbcon = dbcon
 
     def insert(self, clinic):
-        self._conn.execute("""
-               INSERT INTO students (id, location, demand, logistic) VALUES (?, ?, ?, ?)
+        self._dbcon.execute("""
+               INSERT INTO clinics (id, location, demand, logistic) VALUES (?, ?, ?, ?)
            """, [clinic.id, clinic.location, clinic.demand, clinic.logistic])
 
     def find(self, clinic_id):
-        c = self._conn.cursor()
+        c = self._dbcon.cursor()
         c.execute("""
-            SELECT id, name FROM students WHERE id = ?
+            SELECT id, name FROM clinics WHERE id = ?
         """, [clinic_id])
 
         return DTO.Clinics(*c.fetchone())
 
 
-class _Clinics:
-    def __init__(self, conn):
-        self._conn = conn
-
-    def insert(self, clinic):
-        self._conn.execute("""
-               INSERT INTO students (id, location, demand, logistic) VALUES (?, ?, ?, ?)
-           """, [clinic.id, clinic.location, clinic.demand, clinic.logistic])
-
-    def find(self, clinic_id):
-        c = self._conn.cursor()
-        c.execute("""
-            SELECT id, name FROM students WHERE id = ?
-        """, [clinic_id])
-
-        return DTO.Clinics(*c.fetchone())
-
-
-class _Suppliers:
-    def __init__(self, conn):
-        self._conn = conn
+class Suppliers:
+    def __init__(self, dbcon):
+        self._dbcon = dbcon
 
     def insert(self, supplier):
-        self._conn.execute("""
-            INSERT INTO grades (id, name, logistic) VALUES (?, ?, ?)
+        self._dbcon.execute("""
+            INSERT INTO suppliers (id, name, logistic) VALUES (?, ?, ?)
         """, [supplier.id, supplier.name, supplier.logistic])
 
     def find(self, name):
-        c = self._conn.cursor()
+        c = self._dbcon.cursor()
         c.execute("""
-            SELECT id, name FROM students WHERE name = ?
+            SELECT id, name FROM suppliers WHERE name = ?
         """, [name])
 
         return DTO.Suppliers(*c.fetchone())
 
 
-class _Vaccines:
-    def __init__(self, conn):
-        self._conn = conn
+class Vaccines:
+    def __init__(self, dbcon):
+        self._dbcon = dbcon
 
     def insert(self, vaccine):
-        self._conn.execute("""
+        self._dbcon.execute("""
         INSERT INTO vaccines (id, date, supplier, quantity) Values (?, ?, ?, ?) 
         """, [vaccine.id, vaccine.date, vaccine.supplier, vaccine.quantity])
 
     def find(self, vaccine_id):
-        c = self._conn.cursor()
+        c = self._dbcon.cursor()
         c.execute("""
                     SELECT * FROM vaccines WHERE id = ?
                 """, [vaccine_id])
-        return DTO.vaccines(*c.fetchone())
+        return DTO.Vaccines(*c.fetchone())

@@ -1,16 +1,32 @@
-# This is a sample Python script.
+import atexit
+import Repository
+from Repository import repo
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import DTO
+import DAO
+import os
+import sys
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+def main(config_file):
+    cursor = repo._dbcon.cursor()
+    repo.create_tables()
+    config = repo.read_insert(config_file)
 
 
-# Press the green button in the gutter to run the script.
+#  v, s, c, lo = Read_Parse_file.what_to_insert_to_db(Read_Parse_file, config_file)
+#  # populate_db only once
+#  if (repo.is_db_empty()):
+#      repo.populate_db(v, s, c, lo)
+#  print(config)
+#  orders = Read_Parse_file.read_and_parse_orders(Read_Parse_file, order_file)
+#  print(orders)
+#
+#  repo.orders(orders, output_file)
+#
+#
+# # repo.drop_db_tables()
+
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main("config.txt")
