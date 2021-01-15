@@ -18,6 +18,11 @@ class Logistics:
         """, [logistic])
         return DTO.Logistic(*c.fetchone())
 
+    def update_count_received(self, supplier_name, quantity):
+        self._dbcon.execute("""
+        UPDATE logistics SET count_received = quantity WHERE name = supplier_name
+        """)
+
 
 class Clinics:
     def __init__(self, dbcon):
@@ -35,6 +40,11 @@ class Clinics:
         """, [clinic_id])
 
         return DTO.Clinics(*c.fetchone())
+
+    def sub_demand(self, location, amount_received):
+        self._dbcon.execute("""
+                UPDATE clinics SET demand = amount_received WHERE location = location
+                """)
 
 
 class Suppliers:
@@ -70,3 +80,8 @@ class Vaccines:
                     SELECT * FROM vaccines WHERE id = ?
                 """, [vaccine_id])
         return DTO.Vaccines(*c.fetchone())
+
+    def delete_line(self, id_row):
+        c = self._dbcon.cursor()
+        c.execute("""DELETE FROM vaccines WHERE id = ?
+        """, [id_row])

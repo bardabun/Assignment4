@@ -80,6 +80,48 @@ class Repository:
             insert_log = DAO.Logistics(self._dbcon)
             insert_log.insert(logistic)
 
+    # def read_orders_file(self, orders_file):
+    #     with open(orders_file) as f:
+    #         f = f.readlines()
+    #     for i in f:
+    #         if i[-1] == '\n':
+    #             i = i[:-1]
+    #         split_orders_line = i.split(",")
+    #
+    #         if split_orders_line[2] is not None:
+    #             date = split_orders_line[2]
+    #             supplier = split_orders_line[0]
+    #             quantity = split_orders_line[1]
+    #             # self.receive(date, supplier, quantity)
+    #
+    #         else:
+    #             destination = split_orders_line[0]
+    #             quantity = split_orders_line[1]
+    #             self.send_shipment(destination, quantity)
+
+    def send_shipment(self, destination, quantity_to_ship):
+        cursor = self._dbcon.cursor()
+        cursor.execute("""SELECT id,quantity,supplier FROM vaccines ORDER BY date ASC""")
+        all_quantity = cursor.fetchall()
+        accumulative_quantity = 0
+        provided = False
+            for inventory in all_quantity:
+                if int(quantity_to_ship) - inventory[1] >= 0:
+                    quantity_to_ship -= inventory[1]
+                    accumulative_quantity += inventory[1]
+                    # remove line with quantity of 0 from vaccines
+                    DAO.Vaccines.delete_line(self.vaccines, inventory[0])
+                    # subtract the amount of demand from the clinic location quantity
+                    DAO.Clinics.sub_demand(self.clinics, destination, quantity_to_ship)
+                    if(quantity_to_ship == 0)
+                        provided = True
+                else:
+                    # subtract the amount of demand from the clinic location quantity
+                    DAO.Clinics.sub_demand(self.clinics, destination, inventory[1] - quantity_to_ship)
+                    provided = True
+
+            return provided
+
     def _close(self):
         self._dbcon.commit()
 
