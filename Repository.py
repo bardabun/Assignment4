@@ -43,13 +43,13 @@ class Repository:
                        lines_to_read_sup + 1 + lines_to_read_vac + lines_to_read_clin + lines_to_read_log)
 
         for i in range1:
-            list_entries_vaccines = f[i]
+            list_entries_vaccines.append(f[i])
         for i in range2:
-            list_entries_suppliers = f[i]
+            list_entries_suppliers.append(f[i])
         for i in range3:
-            list_entries_clinics = f[i]
+            list_entries_clinics.append(f[i])
         for i in range4:
-            list_entries_logistics = f[i]
+            list_entries_logistics.append(f[i])
 
         for i in list_entries_vaccines:
             i = i[:-1]
