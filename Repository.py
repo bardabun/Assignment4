@@ -53,31 +53,32 @@ class Repository:
 
         for i in list_entries_vaccines:
             i = i[:-1]
-        i = i.split(',')
-        vaccine = DTO.Vaccines(*i)
-        insert_vac = DAO.Vaccines(self._dbcon)
-        insert_vac.insert(vaccine)
+            i = i.split(',')
+            vaccine = DTO.Vaccines(*i)
+            insert_vac = DAO.Vaccines(self._dbcon)
+            insert_vac.insert(vaccine)
 
         for i in list_entries_suppliers:
             i = i[:-1]
-        i = i.split(',')
-        supplier = DTO.Suppliers(*i)
-        insert_sup = DAO.Suppliers(self._dbcon)
-        insert_sup.insert(supplier)
+            i = i.split(',')
+            supplier = DTO.Suppliers(*i)
+            insert_sup = DAO.Suppliers(self._dbcon)
+            insert_sup.insert(supplier)
 
         for i in list_entries_clinics:
             i = i[:-1]
-        i = i.split(',')
-        clinic = DTO.Clinics(*i)
-        insert_cli = DAO.Clinics(self._dbcon)
-        insert_cli.insert(clinic)
+            i = i.split(',')
+            clinic = DTO.Clinics(*i)
+            insert_cli = DAO.Clinics(self._dbcon)
+            insert_cli.insert(clinic)
 
         for i in list_entries_logistics:
-            i = i[:-1]
-        i = i.split(',')
-        logistic = DTO.Logistic(*i)
-        insert_log = DAO.Logistics(self._dbcon)
-        insert_log.insert(logistic)
+            if i[-1] == '\n':
+                i = i[:-1]
+            i = i.split(',')
+            logistic = DTO.Logistic(*i)
+            insert_log = DAO.Logistics(self._dbcon)
+            insert_log.insert(logistic)
 
     def _close(self):
         self._dbcon.commit()
@@ -86,7 +87,7 @@ class Repository:
         self._dbcon.executescript("""
                 CREATE TABLE vaccines (
                     id           INT         PRIMARY KEY,
-                    date        STRING        NOT NULL,
+                    date        DATE        NOT NULL,
                     supplier     INT        REFERENCES supplier(id),
                     quantity     INT           NOT NULL
                 ); 
@@ -111,11 +112,6 @@ class Repository:
                     count_received  INT     NOT NULL
                 );
             """)
-
-
-
-
-
 
 
 # the repository singleton
