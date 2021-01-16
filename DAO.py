@@ -43,8 +43,8 @@ class Clinics:
 
     def sub_demand(self, location, amount_received):
         self._dbcon.execute("""
-                UPDATE clinics SET demand = amount_received WHERE location = location
-                """)
+                UPDATE clinics SET demand = ? WHERE location = ?
+                """, [amount_received, location])
 
 
 class Suppliers:

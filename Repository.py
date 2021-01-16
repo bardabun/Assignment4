@@ -99,7 +99,8 @@ class Repository:
                     # for the output file
                     total_inventory = self.get_total_inventory()
                     total_demand = self.get_total_demand()
-                    total_received = total_received + amount
+                    int_amount = int(amount)
+                    total_received = total_received + int_amount
                     total_sent = 0
                     line_to_add = str(total_inventory) + ',' + str(total_demand) + ',' + str(
                         total_received) + ',' + str(total_sent) + '\n'
@@ -112,7 +113,9 @@ class Repository:
                     # for the output file
                     total_inventory = self.get_total_inventory()
                     total_demand = self.get_total_demand()
-                    total_sent = total_sent + amount
+                    total_sent = 0
+                    int_amount = int(amount)
+                    total_sent += int_amount
 
                     line_to_add = str(total_inventory) + ',' + str(total_demand) + ',' + str(
                         total_received) + ',' + str(total_sent) + '\n'
@@ -124,8 +127,9 @@ class Repository:
         all_quantity = cursor.fetchall()
         accumulative_quantity = 0
         provided = False
+        quantity_to_ship = int(quantity_to_ship)
         for inventory in all_quantity:
-            if int(quantity_to_ship) - inventory[1] >= 0:
+            if quantity_to_ship - inventory[1] >= 0:
                 quantity_to_ship -= inventory[1]
                 accumulative_quantity += inventory[1]
                 # remove line with quantity of 0 from vaccines
@@ -136,7 +140,8 @@ class Repository:
                     provided = True
             else:
                 # subtract the amount of demand from the clinic location quantity
-                DAO.Clinics.sub_demand(self.clinics, destination, inventory[1] - quantity_to_ship)
+                amount_received = inventory[1] - quantity_to_ship
+                DAO.Clinics.sub_demand(self.clinics, destination, amount_received)
                 provided = True
 
         return provided
