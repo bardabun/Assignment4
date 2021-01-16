@@ -85,6 +85,7 @@ class Repository:
         total_received = 0
         with open(orders_file) as f:
             f = f.readlines()
+            total_sent = 0;
             for i in f:
                 if i[-1] == '\n':
                     i = i[:-1]
@@ -101,19 +102,17 @@ class Repository:
                     total_demand = self.get_total_demand()
                     int_amount = int(amount)
                     total_received = total_received + int_amount
-                    total_sent = 0
                     line_to_add = str(total_inventory) + ',' + str(total_demand) + ',' + str(
                         total_received) + ',' + str(total_sent) + '\n'
                     file.write(line_to_add)
                 else:  # Send Shipment
                     location = split_orders_line[0]
                     amount = split_orders_line[1]
-                    self.send_shipment(location, amount)
+                    self.send_shipment(location, int(amount))
 
                     # for the output file
                     total_inventory = self.get_total_inventory()
                     total_demand = self.get_total_demand()
-                    total_sent = 0
                     int_amount = int(amount)
                     total_sent += int_amount
 
@@ -122,34 +121,25 @@ class Repository:
                     file.write(line_to_add)
 
     def send_shipment(self, destination, quantity_to_ship):
+        DAO.Clinics.sub_demand(self.clinics, destination, quantity_to_ship)
+        log = DAO.Clinics.find_log(self.clinics, destination)
+        DAO.Logistics.update_log_sent(self.logistics, quantity_to_ship, log)
         cursor = self._dbcon.cursor()
-        cursor.execute("""SELECT id,quantity,supplier FROM vaccines ORDER BY date ASC""")
-        all_quantity = cursor.fetchall()
-        accumulative_quantity = 0
-        provided = False
-        quantity_to_ship = int(quantity_to_ship)
-        for inventory in all_quantity:
-            if quantity_to_ship - inventory[1] >= 0:
-                quantity_to_ship -= inventory[1]
-                accumulative_quantity += inventory[1]
-                # remove line with quantity of 0 from vaccines
-                DAO.Vaccines.delete_line(self.vaccines, inventory[0])
-                # subtract the amount of demand from the clinic location quantity
-                DAO.Clinics.sub_demand(self.clinics, destination, quantity_to_ship)
-                if quantity_to_ship == 0:
-                    provided = True
+        while quantity_to_ship > 0 :
+            cursor.execute("""SELECT id,quantity,supplier FROM vaccines ORDER BY date ASC""")
+            vaccine = cursor.fetchone()
+            quantity = vaccine[1]
+            gap = quantity - quantity_to_ship
+            if gap < 0:
+                DAO.Vaccines.delete_line(self.vaccines, vaccine[0])
             else:
-                # subtract the amount of demand from the clinic location quantity
-                amount_received = inventory[1] - quantity_to_ship
-                DAO.Clinics.sub_demand(self.clinics, destination, amount_received)
-                provided = True
-
-        return provided
+                DAO.Vaccines.update_vaccine(self.vaccines, vaccine[0], quantity_to_ship)
+            quantity_to_ship = quantity_to_ship - quantity
 
     def receive_shipment(self, name, amount, date):
         cursor = self._dbcon.cursor()
         # finding the unique id
-        id = DAO.Vaccines.find_max_id(self.vaccines) + 1
+        id = DAO.Vaccines.counter
         new_row_vaccine = DTO.Vaccines(id, date, name, amount)
         DAO.Vaccines.insert(self.vaccines, new_row_vaccine)
         cursor.execute("""SELECT logistic FROM suppliers WHERE name=(?)""", [name])
@@ -158,6 +148,7 @@ class Repository:
 
     def _close(self):
         self._dbcon.commit()
+        self._dbcon.close()
 
     def create_tables(self):
         self._dbcon.executescript("""
@@ -193,7 +184,7 @@ class Repository:
         cursor = self._dbcon.cursor()
         cursor.execute("""SELECT count_received FROM logistics WHERE id=(?) """, [sup_logistic_id])
         updated_amount = cursor.fetchone()[0] + amount
-        cursor.execute("""UPDATE logistics  SET count_received=(?) WHERE id=(?) """, [updated_amount, sup_logistic_id])
+        cursor.execute("""UPDATE logistics  SET count_received = ?  WHERE id=(?) """, [updated_amount, sup_logistic_id])
 
     def get_total_inventory(self):
         cursor = self._dbcon.cursor()
@@ -206,6 +197,8 @@ class Repository:
         return cursor.fetchone()[0]
 
 
+
 # the repository singleton
 repo = Repository()
 atexit.register(repo._close)
+

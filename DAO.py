@@ -20,8 +20,13 @@ class Logistics:
 
     def update_count_received(self, supplier_name, quantity):
         self._dbcon.execute("""
-        UPDATE logistics SET count_received = quantity WHERE name = supplier_name
-        """)
+        UPDATE logistics SET count_received = count_received + ? WHERE name = ?
+        """, [quantity, supplier_name])
+
+    def update_log_sent(self, amount, log_id):
+        self._dbcon.execute("""
+            UPDATE logistics
+            SET count_sent = count_sent + ? WHERE id = ?""", [amount, log_id])
 
 
 class Clinics:
@@ -43,9 +48,16 @@ class Clinics:
 
     def sub_demand(self, location, amount_received):
         self._dbcon.execute("""
-                UPDATE clinics SET demand = ? WHERE location = ?
+                UPDATE clinics SET demand = demand - ? WHERE location = ?
                 """, [amount_received, location])
 
+    def find_log(self, location):
+        c = self._dbcon.cursor()
+        c.execute("""
+            SELECT logistic FROM clinics WHERE location = ?
+        """, [location])
+
+        return c.fetchone()[0]
 
 class Suppliers:
     def __init__(self, dbcon):
@@ -65,6 +77,8 @@ class Suppliers:
 
 
 class Vaccines:
+    counter = 1
+
     def __init__(self, dbcon):
         self._dbcon = dbcon
 
@@ -72,6 +86,7 @@ class Vaccines:
         self._dbcon.execute("""
         INSERT INTO vaccines (id, date, supplier, quantity) Values (?, ?, ?, ?)""",
                             [vaccine.id, vaccine.date, vaccine.supplier, vaccine.quantity])
+        Vaccines.counter += 1
 
     def find(self, vaccine_id):
         c = self._dbcon.cursor()
@@ -79,12 +94,9 @@ class Vaccines:
                     SELECT * FROM vaccines WHERE id = ?""", [vaccine_id])
         return DTO.Vaccines(*c.fetchone())
 
-    def find_max_id(self):
-        c = self._dbcon.cursor()
-        c.execute("""SELECT MAX(id) FROM vaccines""")
-        return c.fetchone()[0]
-                        ##-----------------------------------------------------------------need to check [0]
-
     def delete_line(self, id_row):
         c = self._dbcon.cursor()
         c.execute("""DELETE FROM vaccines WHERE id = ?""", [id_row])
+
+    def update_vaccine(self, id_row, amount):
+        self._dbcon.execute("""UPDATE vaccines SET quantity = quantity - ? WHERE id = ?""", [amount, id_row])
