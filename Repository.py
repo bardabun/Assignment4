@@ -81,6 +81,8 @@ class Repository:
             insert_log.insert(logistic)
 
     def read_orders_file(self, orders_file, output_file):
+        file = open(output_file, "w+")
+        total_received = 0
         with open(orders_file) as f:
             f = f.readlines()
             for i in f:
@@ -93,10 +95,28 @@ class Repository:
                     amount = split_orders_line[1]
                     date = split_orders_line[2]
                     self.receive_shipment(supplier, amount, date)
+
+                    # for the output file
+                    total_inventory = self.get_total_inventory()
+                    total_demand = self.get_total_demand()
+                    total_received = total_received + amount
+                    total_sent = 0
+                    line_to_add = str(total_inventory) + ',' + str(total_demand) + ',' + str(
+                        total_received) + ',' + str(total_sent) + '\n'
+                    file.write(line_to_add)
                 else:  # Send Shipment
-                    destination = split_orders_line[0]
-                    quantity = split_orders_line[1]
-                    self.send_shipment(destination, quantity)
+                    location = split_orders_line[0]
+                    amount = split_orders_line[1]
+                    self.send_shipment(location, amount)
+
+                    # for the output file
+                    total_inventory = self.get_total_inventory()
+                    total_demand = self.get_total_demand()
+                    total_sent = total_sent + amount
+
+                    line_to_add = str(total_inventory) + ',' + str(total_demand) + ',' + str(
+                        total_received) + ',' + str(total_sent) + '\n'
+                    file.write(line_to_add)
 
     def send_shipment(self, destination, quantity_to_ship):
         cursor = self._dbcon.cursor()
@@ -130,10 +150,9 @@ class Repository:
         cursor.execute("""SELECT logistic FROM suppliers WHERE name=(?)""", [name])
         sup_logistic_id = cursor.fetchone()[0]
         self.update_count_suppliers(sup_logistic_id, int(amount))
-        
+
     def _close(self):
         self._dbcon.commit()
-
 
     def create_tables(self):
         self._dbcon.executescript("""
@@ -170,6 +189,17 @@ class Repository:
         cursor.execute("""SELECT count_received FROM logistics WHERE id=(?) """, [sup_logistic_id])
         updated_amount = cursor.fetchone()[0] + amount
         cursor.execute("""UPDATE logistics  SET count_received=(?) WHERE id=(?) """, [updated_amount, sup_logistic_id])
+
+    def get_total_inventory(self):
+        cursor = self._dbcon.cursor()
+        cursor.execute("""SELECT SUM(quantity) FROM vaccines""")
+        return cursor.fetchone()[0]
+
+    def get_total_demand(self):
+        cursor = self._dbcon.cursor()
+        cursor.execute("""SELECT SUM(demand) FROM clinics""")
+        return cursor.fetchone()[0]
+
 
 # the repository singleton
 repo = Repository()
