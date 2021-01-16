@@ -71,9 +71,9 @@ class Suppliers:
     def find(self, name):
         c = self._dbcon.cursor()
         c.execute("""
-            SELECT id, name FROM suppliers WHERE name = ?""", [name])
+            SELECT id FROM suppliers WHERE name = ?""", [name])
 
-        return DTO.Suppliers(*c.fetchone())
+        return c.fetchone()[0]
 
 
 class Vaccines:

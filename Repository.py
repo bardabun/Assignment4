@@ -140,7 +140,8 @@ class Repository:
         cursor = self._dbcon.cursor()
         # finding the unique id
         id = DAO.Vaccines.counter
-        new_row_vaccine = DTO.Vaccines(id, date, name, amount)
+        supp_id = DAO.Suppliers.find(self.suppliers, name)
+        new_row_vaccine = DTO.Vaccines(id, date, supp_id, amount)
         DAO.Vaccines.insert(self.vaccines, new_row_vaccine)
         cursor.execute("""SELECT logistic FROM suppliers WHERE name=(?)""", [name])
         sup_logistic_id = cursor.fetchone()[0]
