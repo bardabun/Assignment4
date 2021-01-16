@@ -12,14 +12,14 @@ def main(config_file):
     cursor = repo._dbcon.cursor()
     repo.create_tables()
     config = repo.read_insert(config_file)
-
+    orders = repo.read_orders_file(order_file)
 
 #  v, s, c, lo = Read_Parse_file.what_to_insert_to_db(Read_Parse_file, config_file)
 #  # populate_db only once
 #  if (repo.is_db_empty()):
 #      repo.populate_db(v, s, c, lo)
 #  print(config)
-#  orders = Read_Parse_file.read_and_parse_orders(Read_Parse_file, order_file)
+#
 #  print(orders)
 #
 #  repo.orders(orders, output_file)

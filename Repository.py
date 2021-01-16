@@ -22,7 +22,7 @@ class Repository:
 
     def read_insert(self, config_file):
         with open(config_file) as f:
-            f = f.readlines()  # f stands for file -- make my file list
+            f = f.readlines()  # f stands for file -- make my file a list
         config_first_line = f[0]
         config_first_line = config_first_line[:-1]
         split_config_first_line = config_first_line.split(",")
@@ -80,24 +80,23 @@ class Repository:
             insert_log = DAO.Logistics(self._dbcon)
             insert_log.insert(logistic)
 
-    # def read_orders_file(self, orders_file):
-    #     with open(orders_file) as f:
-    #         f = f.readlines()
-    #     for i in f:
-    #         if i[-1] == '\n':
-    #             i = i[:-1]
-    #         split_orders_line = i.split(",")
-    #
-    #         if split_orders_line[2] is not None:
-    #             date = split_orders_line[2]
-    #             supplier = split_orders_line[0]
-    #             quantity = split_orders_line[1]
-    #             # self.receive(date, supplier, quantity)
-    #
-    #         else:
-    #             destination = split_orders_line[0]
-    #             quantity = split_orders_line[1]
-    #             self.send_shipment(destination, quantity)
+    def read_orders_file(self, orders_file, output_file):
+        with open(orders_file) as f:
+            f = f.readlines()
+            for i in f:
+                if i[-1] == '\n':
+                    i = i[:-1]
+                split_orders_line = i.split(",")
+
+                if len(split_orders_line) == 3:  # Received Shipment
+                    supplier = split_orders_line[0]
+                    amount = split_orders_line[1]
+                    date = split_orders_line[2]
+                    self.receive_shipment(supplier, amount, date)
+                else:  # Send Shipment
+                    destination = split_orders_line[0]
+                    quantity = split_orders_line[1]
+                    self.send_shipment(destination, quantity)
 
     def send_shipment(self, destination, quantity_to_ship):
         cursor = self._dbcon.cursor()
@@ -105,25 +104,36 @@ class Repository:
         all_quantity = cursor.fetchall()
         accumulative_quantity = 0
         provided = False
-            for inventory in all_quantity:
-                if int(quantity_to_ship) - inventory[1] >= 0:
-                    quantity_to_ship -= inventory[1]
-                    accumulative_quantity += inventory[1]
-                    # remove line with quantity of 0 from vaccines
-                    DAO.Vaccines.delete_line(self.vaccines, inventory[0])
-                    # subtract the amount of demand from the clinic location quantity
-                    DAO.Clinics.sub_demand(self.clinics, destination, quantity_to_ship)
-                    if(quantity_to_ship == 0)
-                        provided = True
-                else:
-                    # subtract the amount of demand from the clinic location quantity
-                    DAO.Clinics.sub_demand(self.clinics, destination, inventory[1] - quantity_to_ship)
+        for inventory in all_quantity:
+            if int(quantity_to_ship) - inventory[1] >= 0:
+                quantity_to_ship -= inventory[1]
+                accumulative_quantity += inventory[1]
+                # remove line with quantity of 0 from vaccines
+                DAO.Vaccines.delete_line(self.vaccines, inventory[0])
+                # subtract the amount of demand from the clinic location quantity
+                DAO.Clinics.sub_demand(self.clinics, destination, quantity_to_ship)
+                if quantity_to_ship == 0:
                     provided = True
+            else:
+                # subtract the amount of demand from the clinic location quantity
+                DAO.Clinics.sub_demand(self.clinics, destination, inventory[1] - quantity_to_ship)
+                provided = True
 
-            return provided
+        return provided
 
+    def receive_shipment(self, name, amount, date):
+        cursor = self._dbcon.cursor()
+        # finding the unique id
+        id = DAO.Vaccines.find_max_id(self.vaccines) + 1
+        new_row_vaccine = DTO.Vaccines(id, date, name, amount)
+        DAO.Vaccines.insert(self.vaccines, new_row_vaccine)
+        cursor.execute("""SELECT logistic FROM suppliers WHERE name=(?)""", [name])
+        sup_logistic_id = cursor.fetchone()[0]
+        self.update_count_suppliers(sup_logistic_id, int(amount))
+        
     def _close(self):
         self._dbcon.commit()
+
 
     def create_tables(self):
         self._dbcon.executescript("""
@@ -155,6 +165,11 @@ class Repository:
                 );
             """)
 
+    def update_count_suppliers(self, sup_logistic_id, amount):
+        cursor = self._dbcon.cursor()
+        cursor.execute("""SELECT count_received FROM logistics WHERE id=(?) """, [sup_logistic_id])
+        updated_amount = cursor.fetchone()[0] + amount
+        cursor.execute("""UPDATE logistics  SET count_received=(?) WHERE id=(?) """, [updated_amount, sup_logistic_id])
 
 # the repository singleton
 repo = Repository()

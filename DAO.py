@@ -59,8 +59,7 @@ class Suppliers:
     def find(self, name):
         c = self._dbcon.cursor()
         c.execute("""
-            SELECT id, name FROM suppliers WHERE name = ?
-        """, [name])
+            SELECT id, name FROM suppliers WHERE name = ?""", [name])
 
         return DTO.Suppliers(*c.fetchone())
 
@@ -71,17 +70,21 @@ class Vaccines:
 
     def insert(self, vaccine):
         self._dbcon.execute("""
-        INSERT INTO vaccines (id, date, supplier, quantity) Values (?, ?, ?, ?) 
-        """, [vaccine.id, vaccine.date, vaccine.supplier, vaccine.quantity])
+        INSERT INTO vaccines (id, date, supplier, quantity) Values (?, ?, ?, ?)""",
+                            [vaccine.id, vaccine.date, vaccine.supplier, vaccine.quantity])
 
     def find(self, vaccine_id):
         c = self._dbcon.cursor()
         c.execute("""
-                    SELECT * FROM vaccines WHERE id = ?
-                """, [vaccine_id])
+                    SELECT * FROM vaccines WHERE id = ?""", [vaccine_id])
         return DTO.Vaccines(*c.fetchone())
+
+    def find_max_id(self):
+        c = self._dbcon.cursor()
+        c.execute("""SELECT MAX(id) FROM vaccines""")
+        return c.fetchone()[0]
+                        ##-----------------------------------------------------------------need to check [0]
 
     def delete_line(self, id_row):
         c = self._dbcon.cursor()
-        c.execute("""DELETE FROM vaccines WHERE id = ?
-        """, [id_row])
+        c.execute("""DELETE FROM vaccines WHERE id = ?""", [id_row])
